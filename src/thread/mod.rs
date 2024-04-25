@@ -1,16 +1,16 @@
 use std::mem::zeroed;
 
 use crate::{size_of, FaitheError};
-use windows::Win32::{
-    Foundation::{HANDLE, CloseHandle},
+use windows::{Wdk::System::Threading::{NtQueryInformationThread, THREADINFOCLASS}, Win32::{
+    Foundation::{CloseHandle, HANDLE},
     System::{
         Diagnostics::Debug::{GetThreadContext, SetThreadContext},
         Threading::{
-            NtQueryInformationThread, OpenThread, ResumeThread, SuspendThread, THREADINFOCLASS,
+            OpenThread, ResumeThread, SuspendThread,
             THREAD_ACCESS_RIGHTS,
         },
     },
-};
+}};
 
 pub use windows::Win32::System::Diagnostics::Debug::CONTEXT;
 
@@ -51,14 +51,20 @@ impl OwnedThread {
     /// Returns the start address of the thread
     pub fn start_address(&self) -> crate::Result<usize> {
         let mut addr = 0;
-        unsafe {
+        let status = unsafe {
             NtQueryInformationThread(
                 self.0,
                 THREADINFOCLASS(9), // ThreadQuerySetWin32StartAddress
                 &mut addr as *mut _ as _,
                 size_of!(usize) as _,
                 0 as _,
-            )?;
+            )
+        };
+
+        if status.0 != 0 {
+            // 将 NTSTATUS 转换为 WIN32_ERROR，然后转换为 FaitheError
+            let error_code = windows::Win32::Foundation::WIN32_ERROR(status.0 as u32);  // 将 NTSTATUS 转换为 WIN32_ERROR
+            return Err(FaitheError::ErrorCode(error_code));
         }
         Ok(addr)
     }
@@ -90,7 +96,7 @@ impl OwnedThread {
     pub fn get_context(&self) -> crate::Result<CONTEXT> {
         unsafe {
             let mut ctx = zeroed();
-            if GetThreadContext(self.0, &mut ctx) == false {
+            if GetThreadContext(self.0, &mut ctx).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(ctx)
@@ -102,7 +108,7 @@ impl OwnedThread {
     /// For more info see [microsoft documentation](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadcontext)
     pub fn set_context(&self, ctx: &CONTEXT) -> crate::Result<()> {
         unsafe {
-            if SetThreadContext(self.0, ctx as _) == false {
+            if SetThreadContext(self.0, ctx as _).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(())
@@ -114,7 +120,7 @@ impl OwnedThread {
 impl Drop for OwnedThread {
     fn drop(&mut self) {
         unsafe {
-            CloseHandle(self.0);
+            let _ = CloseHandle(self.0);
         }
     }
 }

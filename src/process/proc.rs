@@ -177,7 +177,7 @@ impl OwnedProcess {
                 &mut buf as *mut T as _,
                 size_of::<T>(),
                 Some(&mut _read),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -196,7 +196,7 @@ impl OwnedProcess {
                 &mut buf as *mut T as _,
                 size_of::<T>(),
                 Some(read),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -216,7 +216,7 @@ impl OwnedProcess {
                 buf.as_mut().as_mut_ptr() as _,
                 buf.as_mut().len(),
                 Some(&mut read),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -239,7 +239,7 @@ impl OwnedProcess {
                 &value as *const T as _,
                 size_of::<T>(),
                 Some(&mut written),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -263,7 +263,7 @@ impl OwnedProcess {
                 buf.as_ref().as_ptr() as _,
                 buf.as_ref().len(),
                 Some(written),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -283,7 +283,7 @@ impl OwnedProcess {
                 buf.as_ref().as_ptr() as _,
                 buf.as_ref().len(),
                 Some(&mut written),
-            ) == false
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -309,7 +309,7 @@ impl OwnedProcess {
                 size,
                 new_protection.to_os(),
                 &mut old
-            ) == false {
+            ).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 MemoryProtection::from_os(old).ok_or(FaitheError::UnknownProtection(old.0))
@@ -359,7 +359,7 @@ impl OwnedProcess {
                 address as _,
                 size,
                 free_type
-            ) == false {
+            ).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(())
@@ -434,7 +434,7 @@ impl OwnedProcess {
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
         unsafe {
-            CloseHandle(self.0);
+            let _ = CloseHandle(self.0);
         }
     }
 }

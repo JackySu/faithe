@@ -21,7 +21,7 @@ pub fn protect(
             size,
             new_protection.to_os(),
             &mut old
-        ) == false {
+        ).is_err() {
             Err(FaitheError::last_error())
         } else {
             MemoryProtection::from_os(old).ok_or(FaitheError::UnknownProtection(old.0))
@@ -67,7 +67,7 @@ pub fn free(
             address as _,
             size,
             free_type
-        ) == false {
+        ).is_err() {
             Err(FaitheError::last_error())
         } else {
             Ok(())
