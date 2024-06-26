@@ -54,7 +54,7 @@ pub fn message_box(
 ) -> crate::Result<()> {
     if unsafe {
         MessageBoxW(
-            hwnd.unwrap_or_default(),
+            hwnd,
             PCWSTR(
                 format!("{}\x00", text.as_ref())
                     .encode_utf16()
