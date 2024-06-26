@@ -47,7 +47,7 @@ pub fn free_console() -> crate::Result<()> {
 
 /// Creates new message box.
 pub fn message_box(
-    hwnd: Option<HWND>,
+    hwnd: HWND,
     text: impl AsRef<str>,
     caption: impl AsRef<str>,
     style: MESSAGEBOX_STYLE,

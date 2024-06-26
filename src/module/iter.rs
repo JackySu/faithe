@@ -1,7 +1,7 @@
 use crate::FaitheError;
 use std::mem::size_of;
 use windows::Win32::{
-    Foundation::{HANDLE, HINSTANCE},
+    Foundation::{HANDLE, HMODULE},
     System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, Module32FirstW, Module32NextW, MODULEENTRY32W, TH32CS_SNAPMODULE,
         TH32CS_SNAPMODULE32,
@@ -18,7 +18,7 @@ pub struct ModuleEntry {
     /// Size of the module in bytes.
     pub size: usize,
     /// Handle to the module.
-    pub handle: HINSTANCE,
+    pub handle: HMODULE,
     /// Name of the module.
     pub name: String,
     /// Full path to the module.

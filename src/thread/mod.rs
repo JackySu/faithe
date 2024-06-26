@@ -60,8 +60,10 @@ impl OwnedThread {
                 0 as _,
             );
 
+
             if status != STATUS_SUCCESS {
-                return Err(FaitheError::last_error());
+                let error_code = windows::Win32::Foundation::WIN32_ERROR(status.0 as u32);
+                return Err(FaitheError::ErrorCode(error_code));
             }
         }
         Ok(addr)
