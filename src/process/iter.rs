@@ -88,7 +88,7 @@ impl ProcessIterator {
                 entry,
                 ret: true,
             };
-            if Process32FirstW(this.snap, &mut this.entry) == false {
+            if Process32FirstW(this.snap, &mut this.entry).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(this)
@@ -107,7 +107,7 @@ impl Iterator for ProcessIterator {
             let this = self.entry.into();
 
             unsafe {
-                self.ret = Process32NextW(self.snap, &mut self.entry) == true;
+                self.ret = Process32NextW(self.snap, &mut self.entry).is_ok();
             }
 
             Some(this)

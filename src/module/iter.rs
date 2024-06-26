@@ -31,7 +31,7 @@ impl From<MODULEENTRY32W> for ModuleEntry {
             process_id: me.th32ProcessID,
             base_address: me.modBaseAddr as _,
             size: me.modBaseSize as _,
-            handle: me.hModule,
+            handle: me.hModule.into(),
             name: String::from_utf16_lossy(
                 &me.szModule[..me.szModule.iter().position(|b| *b == 0).unwrap_or(0)],
             ),
@@ -68,7 +68,7 @@ impl ModuleIterator {
                 ret: true,
             };
 
-            if Module32FirstW(snap, &mut this.entry) == false {
+            if Module32FirstW(snap, &mut this.entry).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(this)
@@ -87,7 +87,7 @@ impl Iterator for ModuleIterator {
             let this = self.entry.into();
 
             unsafe {
-                self.ret = Module32NextW(self.snap, &mut self.entry) == true;
+                self.ret = Module32NextW(self.snap, &mut self.entry).is_ok();
             }
 
             Some(this)

@@ -10,7 +10,6 @@ use crate::{
 use std::{
     mem::{self, size_of, zeroed},
     path::Path,
-    ptr::null,
 };
 use windows::Win32::{
     Foundation::{CloseHandle, HANDLE, HINSTANCE},
@@ -171,14 +170,13 @@ impl OwnedProcess {
     pub fn read<T>(&self, address: usize) -> crate::Result<T> {
         unsafe {
             let mut buf = zeroed();
-            let mut _read = 0;
             if ReadProcessMemory(
                 self.0,
                 address as _,
                 &mut buf as *mut T as _,
                 size_of::<T>(),
-                &mut _read,
-            ) == false
+                None,
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -196,8 +194,8 @@ impl OwnedProcess {
                 address as _,
                 &mut buf as *mut T as _,
                 size_of::<T>(),
-                read,
-            ) == false
+                Some(read as *mut usize),
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -216,8 +214,8 @@ impl OwnedProcess {
                 address as _,
                 buf.as_mut().as_mut_ptr() as _,
                 buf.as_mut().len(),
-                &mut read,
-            ) == false
+                Some(&mut read as *mut _),
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -239,8 +237,8 @@ impl OwnedProcess {
                 address as _,
                 &value as *const T as _,
                 size_of::<T>(),
-                &mut written,
-            ) == false
+                Some(&mut written as *mut _),
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -263,8 +261,8 @@ impl OwnedProcess {
                 address as _,
                 buf.as_ref().as_ptr() as _,
                 buf.as_ref().len(),
-                written,
-            ) == false
+                Some(written as *mut _),
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -283,8 +281,8 @@ impl OwnedProcess {
                 address as _,
                 buf.as_ref().as_ptr() as _,
                 buf.as_ref().len(),
-                &mut written,
-            ) == false
+                Some(&mut written as *mut _),
+            ).is_err()
             {
                 Err(FaitheError::last_error())
             } else {
@@ -310,7 +308,7 @@ impl OwnedProcess {
                 size,
                 new_protection.to_os(),
                 &mut old
-            ) == false {
+            ).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 MemoryProtection::from_os(old).ok_or(FaitheError::UnknownProtection(old.0))
@@ -331,7 +329,7 @@ impl OwnedProcess {
         unsafe {
             let region = VirtualAllocEx(
                 self.0,
-                address as _,
+                Some(address as _),
                 size,
                 allocation_type,
                 protection.to_os()
@@ -360,7 +358,7 @@ impl OwnedProcess {
                 address as _,
                 size,
                 free_type
-            ) == false {
+            ).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(())
@@ -372,7 +370,7 @@ impl OwnedProcess {
     pub fn query_memory(&self, address: usize) -> crate::Result<MemoryBasicInformation> {
         unsafe {
             let mut mem_info = zeroed();
-            if VirtualQueryEx(self.0, address as _, &mut mem_info, size_of!(@ mem_info)) == 0 {
+            if VirtualQueryEx(self.0, Some(address as _), &mut mem_info, size_of!(@ mem_info)) == 0 {
                 Err(FaitheError::last_error())
             } else {
                 Ok(mem_info.into())
@@ -391,12 +389,12 @@ impl OwnedProcess {
             let mut tid = 0;
             CreateRemoteThread(
                 self.0,
-                null(),
+                None,
                 0,
                 mem::transmute(address),
-                param as _,
+                Some(param as _),
                 0,
-                &mut tid,
+                Some(&mut tid),
             )
             .map_err(|_| FaitheError::last_error())
             .map(|v| (v, tid))
@@ -435,7 +433,7 @@ impl OwnedProcess {
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
         unsafe {
-            CloseHandle(self.0);
+            let _ = CloseHandle(self.0);
         }
     }
 }

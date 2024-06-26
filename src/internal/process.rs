@@ -29,7 +29,7 @@ pub fn get_current_process_id() -> u32 {
 
 /// Allocates console windows ig.
 pub fn alloc_console() -> crate::Result<()> {
-    if unsafe { Console::AllocConsole().0 == 0 } {
+    if unsafe { Console::AllocConsole().is_err() } {
         Err(FaitheError::last_error())
     } else {
         Ok(())
@@ -38,7 +38,7 @@ pub fn alloc_console() -> crate::Result<()> {
 
 /// Frees console.
 pub fn free_console() -> crate::Result<()> {
-    if unsafe { Console::FreeConsole().0 == 0 } {
+    if unsafe { Console::FreeConsole().is_err() } {
         Err(FaitheError::last_error())
     } else {
         Ok(())
@@ -54,7 +54,7 @@ pub fn message_box(
 ) -> crate::Result<()> {
     if unsafe {
         MessageBoxW(
-            hwnd,
+            hwnd.unwrap_or_default(),
             PCWSTR(
                 format!("{}\x00", text.as_ref())
                     .encode_utf16()

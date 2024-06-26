@@ -69,7 +69,7 @@ impl ThreadIterator {
                 entry,
             };
 
-            if Thread32First(snapshot, &mut this.entry) == false {
+            if Thread32First(snapshot, &mut this.entry).is_err() {
                 Err(FaitheError::last_error())
             } else {
                 Ok(this)
@@ -88,11 +88,11 @@ impl Iterator for ThreadIterator {
             let mut this: ThreadEntry = self.entry.into();
 
             unsafe {
-                self.should_return = Thread32Next(self.snapshot, &mut self.entry) == false;
+                self.should_return = Thread32Next(self.snapshot, &mut self.entry).is_err();
 
                 while this.process_id != self.process_id {
                     this = self.entry.into();
-                    self.should_return = Thread32Next(self.snapshot, &mut self.entry) == false;
+                    self.should_return = Thread32Next(self.snapshot, &mut self.entry).is_err();
                     if self.should_return {
                         return None;
                     }
